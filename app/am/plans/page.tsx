@@ -1,81 +1,33 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { CheckCircle2, Clock, XCircle, FileText, Calendar, Euro } from "lucide-react"
-import { useState } from "react"
+import { getPlans } from "@/lib/supabase/queries/plans"
 
 type PlanStatus = "pending" | "approved" | "rejected"
 
-interface Plan {
-  id: number
-  client: string
-  campaign: string
-  amount: string
-  date: string
-  status: PlanStatus
-  description: string
-}
-
 export default function AMPlansPage() {
-  const [plans] = useState<Plan[]>([
-    {
-      id: 1,
-      client: "TechCorp",
-      campaign: "Lancement Q1",
-      amount: "15 000€",
-      date: "2025-01-15",
-      status: "pending",
-      description: "Campagne de lancement produit avec 50 affiliés",
-    },
-    {
-      id: 2,
-      client: "FashionBrand",
-      campaign: "Collection Été",
-      amount: "22 500€",
-      date: "2025-01-14",
-      status: "pending",
-      description: "Promotion collection été avec influenceurs mode",
-    },
-    {
-      id: 3,
-      client: "FinanceApp",
-      campaign: "Acquisition Utilisateurs",
-      amount: "30 000€",
-      date: "2025-01-12",
-      status: "pending",
-      description: "Programme d'affiliation pour acquisition utilisateurs",
-    },
-    {
-      id: 4,
-      client: "FashionBrand",
-      campaign: "Black Friday",
-      amount: "45 000€",
-      date: "2025-01-10",
-      status: "approved",
-      description: "Campagne Black Friday avec commissions boostées",
-    },
-    {
-      id: 5,
-      client: "TechCorp",
-      campaign: "Webinaires Q4",
-      amount: "12 000€",
-      date: "2025-01-08",
-      status: "approved",
-      description: "Série de webinaires avec affiliés tech",
-    },
-    {
-      id: 6,
-      client: "FoodDelivery",
-      campaign: "Expansion Régionale",
-      amount: "8 000€",
-      date: "2025-01-05",
-      status: "rejected",
-      description: "Expansion géographique - budget insuffisant",
-    },
-  ])
+  const [plans, setPlans] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const plansData = await getPlans()
+        setPlans(plansData)
+        console.log("[v0] AM Plans - Plans loaded from Supabase:", plansData)
+      } catch (error) {
+        console.error("[v0] Error loading plans:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadData()
+  }, [])
 
   const getStatusConfig = (status: PlanStatus) => {
     switch (status) {
@@ -92,6 +44,16 @@ export default function AMPlansPage() {
     pending: plans.filter((p) => p.status === "pending"),
     approved: plans.filter((p) => p.status === "approved"),
     rejected: plans.filter((p) => p.status === "rejected"),
+  }
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <p className="text-muted-foreground">Chargement des données...</p>
+        </div>
+      </DashboardLayout>
+    )
   }
 
   return (
@@ -119,29 +81,31 @@ export default function AMPlansPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               {groupedPlans.pending.map((plan) => {
-                const config = getStatusConfig(plan.status)
+                const config = getStatusConfig(plan.status as PlanStatus)
                 return (
                   <Card key={plan.id} className="hover:shadow-md transition-shadow cursor-pointer">
                     <CardContent className="p-4 space-y-3">
                       <div className="flex items-start justify-between">
                         <div className="space-y-1">
-                          <h4 className="font-semibold">{plan.client}</h4>
-                          <p className="text-sm text-muted-foreground">{plan.campaign}</p>
+                          <h4 className="font-semibold">{plan.client?.name}</h4>
+                          <p className="text-sm text-muted-foreground">{plan.campaign_name}</p>
                         </div>
                         <Badge className={config.color}>
                           <config.icon className="w-3 h-3 mr-1" />
                           {config.label}
                         </Badge>
                       </div>
-                      <p className="text-xs text-muted-foreground line-clamp-2">{plan.description}</p>
+                      <p className="text-xs text-muted-foreground line-clamp-2">
+                        Budget estimé: {plan.estimated_budget}€
+                      </p>
                       <div className="flex items-center justify-between text-xs text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
-                          {plan.date}
+                          {plan.start_date}
                         </div>
                         <div className="flex items-center gap-1 font-semibold text-foreground">
                           <Euro className="h-3 w-3" />
-                          {plan.amount}
+                          {plan.fixed_fee}€
                         </div>
                       </div>
                       <div className="flex gap-2 pt-2">
@@ -181,29 +145,31 @@ export default function AMPlansPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               {groupedPlans.approved.map((plan) => {
-                const config = getStatusConfig(plan.status)
+                const config = getStatusConfig(plan.status as PlanStatus)
                 return (
                   <Card key={plan.id} className="hover:shadow-md transition-shadow cursor-pointer">
                     <CardContent className="p-4 space-y-3">
                       <div className="flex items-start justify-between">
                         <div className="space-y-1">
-                          <h4 className="font-semibold">{plan.client}</h4>
-                          <p className="text-sm text-muted-foreground">{plan.campaign}</p>
+                          <h4 className="font-semibold">{plan.client?.name}</h4>
+                          <p className="text-sm text-muted-foreground">{plan.campaign_name}</p>
                         </div>
                         <Badge className={config.color}>
                           <config.icon className="w-3 h-3 mr-1" />
                           {config.label}
                         </Badge>
                       </div>
-                      <p className="text-xs text-muted-foreground line-clamp-2">{plan.description}</p>
+                      <p className="text-xs text-muted-foreground line-clamp-2">
+                        Budget estimé: {plan.estimated_budget}€
+                      </p>
                       <div className="flex items-center justify-between text-xs text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
-                          {plan.date}
+                          {plan.start_date}
                         </div>
                         <div className="flex items-center gap-1 font-semibold text-foreground">
                           <Euro className="h-3 w-3" />
-                          {plan.amount}
+                          {plan.fixed_fee}€
                         </div>
                       </div>
                       <Button size="sm" variant="outline" className="w-full bg-transparent">
@@ -233,29 +199,31 @@ export default function AMPlansPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               {groupedPlans.rejected.map((plan) => {
-                const config = getStatusConfig(plan.status)
+                const config = getStatusConfig(plan.status as PlanStatus)
                 return (
                   <Card key={plan.id} className="hover:shadow-md transition-shadow cursor-pointer">
                     <CardContent className="p-4 space-y-3">
                       <div className="flex items-start justify-between">
                         <div className="space-y-1">
-                          <h4 className="font-semibold">{plan.client}</h4>
-                          <p className="text-sm text-muted-foreground">{plan.campaign}</p>
+                          <h4 className="font-semibold">{plan.client?.name}</h4>
+                          <p className="text-sm text-muted-foreground">{plan.campaign_name}</p>
                         </div>
                         <Badge className={config.color}>
                           <config.icon className="w-3 h-3 mr-1" />
                           {config.label}
                         </Badge>
                       </div>
-                      <p className="text-xs text-muted-foreground line-clamp-2">{plan.description}</p>
+                      <p className="text-xs text-muted-foreground line-clamp-2">
+                        Budget estimé: {plan.estimated_budget}€
+                      </p>
                       <div className="flex items-center justify-between text-xs text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
-                          {plan.date}
+                          {plan.start_date}
                         </div>
                         <div className="flex items-center gap-1 font-semibold text-foreground">
                           <Euro className="h-3 w-3" />
-                          {plan.amount}
+                          {plan.fixed_fee}€
                         </div>
                       </div>
                       <Button size="sm" variant="outline" className="w-full bg-transparent">

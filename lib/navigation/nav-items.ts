@@ -13,6 +13,13 @@ import {
   Store,
   Bell,
   History,
+  ClipboardList,
+  DollarSign,
+  CreditCard,
+  FolderOpen,
+  FileSignature,
+  Mail,
+  LifeBuoy,
   type LucideIcon,
 } from "lucide-react"
 import type { UserRole } from "@/lib/store/user-store"
@@ -187,14 +194,79 @@ export const navigationConfig: Record<UserRole, NavGroup[]> = {
           icon: Building2,
         },
         {
+          title: "Campagnes",
+          href: "/manager/campaigns",
+          icon: Target,
+        },
+        {
+          title: "Plans",
+          href: "/manager/plans",
+          icon: ClipboardList,
+        },
+        {
+          title: "Objectifs",
+          href: "/manager/objectifs",
+          icon: TrendingUp,
+        },
+        {
           title: "Performance",
           href: "/manager/performance",
-          icon: TrendingUp,
+          icon: BarChart3,
         },
         {
           title: "Rapports",
           href: "/manager/reports",
-          icon: BarChart3,
+          icon: FileText,
+        },
+        {
+          title: "Activité",
+          href: "/manager/activity",
+          icon: History,
+        },
+        {
+          title: "Notifications",
+          href: "/manager/notifications",
+          icon: Bell,
+        },
+        {
+          title: "Support",
+          href: "/manager/support/tickets",
+          icon: LifeBuoy,
+        },
+      ],
+    },
+    {
+      label: "Financier",
+      items: [
+        {
+          title: "Commissions",
+          href: "/manager/commissions",
+          icon: DollarSign,
+        },
+        {
+          title: "Récapitulatif",
+          href: "/manager/recapitulatif",
+          icon: CreditCard,
+        },
+      ],
+    },
+    {
+      label: "Documents",
+      items: [
+        {
+          title: "Kit Média Affilié",
+          href: "/manager/media-kits",
+          icon: FolderOpen,
+        },
+        {
+          title: "Contrats",
+          href: "/manager/contracts",
+          icon: FileSignature,
+        },
+        {
+          title: "Templates d'Emails",
+          href: "/manager/email-templates",
+          icon: Mail,
         },
       ],
     },
@@ -371,3 +443,5 @@ export const navigationConfig: Record<UserRole, NavGroup[]> = {
     },
   ],
 }
+
+export const managerNavItems = navigationConfig.manager

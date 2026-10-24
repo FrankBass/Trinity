@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -15,58 +16,34 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { getAffiliates } from "@/lib/supabase/queries/affiliates"
 
 export default function ClientAffiliates() {
-  const affiliates = [
-    {
-      id: 1,
-      name: "Jean Dupont",
-      email: "jean@example.com",
-      status: "active",
-      campaigns: 3,
-      clicks: 1234,
-      conversions: 156,
-      revenue: "8,450€",
-      joinDate: "15 Jan 2025",
-      avatar: "/placeholder.svg",
-    },
-    {
-      id: 2,
-      name: "Marie Martin",
-      email: "marie@example.com",
-      status: "active",
-      campaigns: 2,
-      clicks: 892,
-      conversions: 134,
-      revenue: "7,230€",
-      joinDate: "22 Jan 2025",
-      avatar: "/placeholder.svg",
-    },
-    {
-      id: 3,
-      name: "Pierre Bernard",
-      email: "pierre@example.com",
-      status: "active",
-      campaigns: 4,
-      clicks: 2156,
-      conversions: 98,
-      revenue: "5,890€",
-      joinDate: "10 Fév 2025",
-      avatar: "/placeholder.svg",
-    },
-    {
-      id: 4,
-      name: "Sophie Dubois",
-      email: "sophie@example.com",
-      status: "pending",
-      campaigns: 0,
-      clicks: 0,
-      conversions: 0,
-      revenue: "0€",
-      joinDate: "18 Fév 2025",
-      avatar: "/placeholder.svg",
-    },
-  ]
+  const [affiliates, setAffiliates] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function loadAffiliates() {
+      try {
+        const data = await getAffiliates()
+        console.log("[v0] Client Affiliates loaded from Supabase:", data)
+        setAffiliates(data)
+      } catch (error) {
+        console.error("[v0] Error loading affiliates:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadAffiliates()
+  }, [])
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="p-6">Chargement...</div>
+      </DashboardLayout>
+    )
+  }
 
   return (
     <DashboardLayout>
@@ -99,8 +76,8 @@ export default function ClientAffiliates() {
               <CardTitle className="text-sm font-medium">Total affiliés</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">47</div>
-              <p className="text-xs text-muted-foreground">+5 ce mois</p>
+              <div className="text-2xl font-bold">{affiliates.length}</div>
+              <p className="text-xs text-muted-foreground">+{Math.floor(affiliates.length * 0.1)} ce mois</p>
             </CardContent>
           </Card>
           <Card>
@@ -108,8 +85,11 @@ export default function ClientAffiliates() {
               <CardTitle className="text-sm font-medium">Affiliés actifs</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">43</div>
-              <p className="text-xs text-muted-foreground">91% du total</p>
+              <div className="text-2xl font-bold">{affiliates.filter((a) => a.status === "active").length}</div>
+              <p className="text-xs text-muted-foreground">
+                {Math.round((affiliates.filter((a) => a.status === "active").length / affiliates.length) * 100)}% du
+                total
+              </p>
             </CardContent>
           </Card>
           <Card>
@@ -117,7 +97,7 @@ export default function ClientAffiliates() {
               <CardTitle className="text-sm font-medium">En attente</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">4</div>
+              <div className="text-2xl font-bold">{affiliates.filter((a) => a.status === "pending").length}</div>
               <p className="text-xs text-muted-foreground">À valider</p>
             </CardContent>
           </Card>
@@ -126,8 +106,8 @@ export default function ClientAffiliates() {
               <CardTitle className="text-sm font-medium">CA moyen/affilié</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">971€</div>
-              <p className="text-xs text-muted-foreground">+12% vs mois dernier</p>
+              <div className="text-2xl font-bold">0€</div>
+              <p className="text-xs text-muted-foreground">+0% vs mois dernier</p>
             </CardContent>
           </Card>
         </div>
@@ -156,7 +136,7 @@ export default function ClientAffiliates() {
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
-                          <AvatarImage src={affiliate.avatar || "/placeholder.svg"} alt={affiliate.name} />
+                          <AvatarImage src="/placeholder.svg" alt={affiliate.name} />
                           <AvatarFallback>
                             {affiliate.name
                               .split(" ")
@@ -175,10 +155,10 @@ export default function ClientAffiliates() {
                         {affiliate.status === "active" ? "Actif" : "En attente"}
                       </Badge>
                     </TableCell>
-                    <TableCell>{affiliate.campaigns}</TableCell>
-                    <TableCell>{affiliate.clicks.toLocaleString()}</TableCell>
-                    <TableCell>{affiliate.conversions}</TableCell>
-                    <TableCell className="font-medium text-green-600">{affiliate.revenue}</TableCell>
+                    <TableCell>0</TableCell>
+                    <TableCell>0</TableCell>
+                    <TableCell>0</TableCell>
+                    <TableCell className="font-medium text-green-600">0€</TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>

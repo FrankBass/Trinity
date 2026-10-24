@@ -7,13 +7,16 @@ import { Badge } from "@/components/ui/badge"
 import { Plus, Edit, Trash2, Copy } from "lucide-react"
 
 export default function AMCommissionsPage() {
+  // Commission grids are configuration entities, not data from clients
+  // These are templates that will be stored in a separate table when implemented
+
   const commissionGrids = [
     {
       id: 1,
       name: "Grille Standard",
       type: "Pourcentage",
       rate: "10%",
-      clients: 5,
+      clients: 0,
       status: "active",
       description: "Commission fixe de 10% sur toutes les ventes",
     },
@@ -22,7 +25,7 @@ export default function AMCommissionsPage() {
       name: "Grille Premium",
       type: "Paliers",
       rate: "12-18%",
-      clients: 3,
+      clients: 0,
       status: "active",
       description: "Commission progressive selon le volume de ventes",
     },
@@ -31,7 +34,7 @@ export default function AMCommissionsPage() {
       name: "Grille Saisonnière",
       type: "Fixe",
       rate: "25€",
-      clients: 2,
+      clients: 0,
       status: "active",
       description: "Commission fixe par conversion pendant les soldes",
     },
@@ -110,6 +113,7 @@ export default function AMCommissionsPage() {
           ))}
         </div>
 
+        {/* Commission grids UI - these are configuration templates */}
         <Card>
           <CardHeader>
             <CardTitle>Configuration des paliers</CardTitle>

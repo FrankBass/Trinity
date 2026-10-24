@@ -3,11 +3,18 @@ import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "@/components/providers/theme-provider"
+import { SupabaseAuthProvider } from "@/components/providers/supabase-auth-provider"
 import { Toaster } from "@/components/ui/toaster"
 import "./globals.css"
 
-const _geist = Geist({ subsets: ["latin"] })
-const _geistMono = Geist_Mono({ subsets: ["latin"] })
+const geist = Geist({
+  subsets: ["latin"],
+  variable: "--font-sans",
+})
+const geistMono = Geist_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+})
 
 export const metadata: Metadata = {
   title: "Trinity - Plateforme de gestion d'affiliation",
@@ -21,10 +28,10 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="fr" suppressHydrationWarning>
+    <html lang="fr" suppressHydrationWarning className={`${geist.variable} ${geistMono.variable}`}>
       <body className={`font-sans antialiased`}>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
-          {children}
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+          <SupabaseAuthProvider>{children}</SupabaseAuthProvider>
           <Toaster />
         </ThemeProvider>
         <Analytics />

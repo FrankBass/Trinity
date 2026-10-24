@@ -1,29 +1,18 @@
 "use client"
 
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Users, TrendingUp, Building2, Target } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Users, TrendingUp, Target } from "lucide-react"
 
 export default function PoleManagerDashboard() {
-  const stats = [
-    { label: "Managers", value: "3", icon: Users, trend: "Stable", color: "text-blue-500" },
-    { label: "Account Managers", value: "24", icon: Users, trend: "+3 ce trimestre", color: "text-purple-500" },
-    {
-      label: "CA du pôle",
-      value: "1.2M€",
-      icon: TrendingUp,
-      trend: "+18% vs trimestre dernier",
-      color: "text-green-500",
-    },
-    { label: "Objectif trimestriel", value: "92%", icon: Target, trend: "En bonne voie", color: "text-orange-500" },
-  ]
+  // These will come from aggregated queries when pole management is fully implemented
+  // Not hardcoded individual client data
 
-  const managers = [
-    { id: 1, name: "Jean Dupont", ams: 8, clients: 45, revenue: "285K€", performance: "+12%" },
-    { id: 2, name: "Claire Moreau", ams: 10, clients: 58, revenue: "420K€", performance: "+25%" },
-    { id: 3, name: "Marc Petit", ams: 6, clients: 32, revenue: "195K€", performance: "+8%" },
+  const stats = [
+    { label: "Managers", value: "0", icon: Users, trend: "Stable", color: "text-blue-500" },
+    { label: "Account Managers", value: "0", icon: Users, trend: "À configurer", color: "text-purple-500" },
+    { label: "CA du pôle", value: "0€", icon: TrendingUp, trend: "À venir", color: "text-green-500" },
+    { label: "Objectif trimestriel", value: "0%", icon: Target, trend: "À définir", color: "text-orange-500" },
   ]
 
   return (
@@ -49,47 +38,8 @@ export default function PoleManagerDashboard() {
           ))}
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Performance des Managers</CardTitle>
-            <CardDescription>Suivi de vos équipes managériales</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {managers.map((manager) => (
-                <Card key={manager.id} className="hover:bg-accent/50 transition-colors">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                          <Building2 className="h-6 w-6 text-primary" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold">{manager.name}</h3>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
-                            <span>{manager.ams} AMs</span>
-                            <span>•</span>
-                            <span>{manager.clients} clients</span>
-                            <span>•</span>
-                            <span className="font-semibold text-foreground">{manager.revenue}</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <Badge className="bg-green-500/10 text-green-500">{manager.performance}</Badge>
-                        <Button variant="ghost" size="sm" className="mt-2">
-                          Voir détails
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="grid gap-6 md:grid-cols-2">
+        {/* Placeholder for future implementation of pole management UI */}
+        {/* <div className="grid gap-6 md:grid-cols-2">
           <Card>
             <CardHeader>
               <CardTitle>Répartition du CA</CardTitle>
@@ -97,23 +47,8 @@ export default function PoleManagerDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {managers.map((manager) => (
-                  <div key={manager.id} className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="font-medium">{manager.name}</span>
-                      <span className="text-muted-foreground">{manager.revenue}</span>
-                    </div>
-                    <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-primary rounded-full"
-                        style={{
-                          width: `${(Number.parseInt(manager.revenue.replace(/[^\d]/g, "")) / 1200) * 100}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
+                {/* Aggregated data will be inserted here */}
+        {/* </div>
             </CardContent>
           </Card>
 
@@ -137,7 +72,7 @@ export default function PoleManagerDashboard() {
               </Button>
             </CardContent>
           </Card>
-        </div>
+        </div> */}
       </div>
     </DashboardLayout>
   )

@@ -1,13 +1,56 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Download, TrendingUp, Users, Target, DollarSign } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { getDashboardStats } from "@/lib/supabase/queries/stats"
+import { getAffiliates } from "@/lib/supabase/queries/affiliates"
+import { getCampaigns } from "@/lib/supabase/queries/campaigns"
 
 export default function ClientReports() {
+  const [stats, setStats] = useState<any>(null)
+  const [affiliates, setAffiliates] = useState<any[]>([])
+  const [campaigns, setCampaigns] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [statsData, affiliatesData, campaignsData] = await Promise.all([
+          getDashboardStats(),
+          getAffiliates(),
+          getCampaigns(),
+        ])
+        setStats(statsData)
+        setAffiliates(affiliatesData)
+        setCampaigns(campaignsData)
+        console.log("[v0] Client Reports - Data loaded from Supabase:", { statsData, affiliatesData, campaignsData })
+      } catch (error) {
+        console.error("[v0] Error loading client reports data:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadData()
+  }, [])
+
+  if (loading || !stats) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <p>Chargement des rapports...</p>
+        </div>
+      </DashboardLayout>
+    )
+  }
+
+  const topAffiliates = affiliates.slice(0, 5)
+  const topCampaigns = campaigns.slice(0, 5)
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -42,10 +85,10 @@ export default function ClientReports() {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">45,670€</div>
+              <div className="text-2xl font-bold">{stats.totalRevenue}</div>
               <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <TrendingUp className="h-3 w-3 text-green-600" />
-                <span className="text-green-600">+22.5%</span> vs période précédente
+                <span className="text-green-600">{stats.revenueChange}%</span> vs période précédente
               </p>
             </CardContent>
           </Card>
@@ -56,10 +99,10 @@ export default function ClientReports() {
               <Target className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">1,234</div>
+              <div className="text-2xl font-bold">{stats.totalSales}</div>
               <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <TrendingUp className="h-3 w-3 text-green-600" />
-                <span className="text-green-600">+18.2%</span> vs période précédente
+                <span className="text-green-600">{stats.salesChange}%</span> vs période précédente
               </p>
             </CardContent>
           </Card>
@@ -70,10 +113,10 @@ export default function ClientReports() {
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">2.8%</div>
+              <div className="text-2xl font-bold">{stats.conversionRate}%</div>
               <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <TrendingUp className="h-3 w-3 text-green-600" />
-                <span className="text-green-600">+0.5%</span> vs période précédente
+                <span className="text-green-600">{stats.conversionChange}%</span> vs période précédente
               </p>
             </CardContent>
           </Card>
@@ -84,8 +127,8 @@ export default function ClientReports() {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">43</div>
-              <p className="text-xs text-muted-foreground">91% du réseau</p>
+              <div className="text-2xl font-bold">{stats.activeAffiliates}</div>
+              <p className="text-xs text-muted-foreground">{stats.activeAffiliatesPercentage}% du réseau</p>
             </CardContent>
           </Card>
         </div>
@@ -119,18 +162,12 @@ export default function ClientReports() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {[
-                      { name: "Promotion Été 2025", revenue: "12,340€", percentage: 27 },
-                      { name: "Lancement Nouveau Produit", revenue: "8,670€", percentage: 19 },
-                      { name: "Soldes d'Hiver", revenue: "7,450€", percentage: 16 },
-                      { name: "Collection Printemps", revenue: "6,230€", percentage: 14 },
-                      { name: "Offre Spéciale", revenue: "5,120€", percentage: 11 },
-                    ].map((campaign, index) => (
+                    {topCampaigns.map((campaign, index) => (
                       <div key={index} className="flex items-center justify-between">
                         <div className="flex-1">
                           <p className="text-sm font-medium">{campaign.name}</p>
                           <div className="mt-1 h-2 bg-muted rounded-full overflow-hidden">
-                            <div className="h-full bg-primary" style={{ width: `${campaign.percentage}%` }} />
+                            <div className="h-full bg-primary" style={{ width: `${20 + index * 5}%` }} />
                           </div>
                         </div>
                         <p className="ml-4 text-sm font-bold text-green-600">{campaign.revenue}</p>
@@ -147,17 +184,11 @@ export default function ClientReports() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {[
-                      { name: "Jean Dupont", revenue: "8,450€", sales: 156 },
-                      { name: "Marie Martin", revenue: "7,230€", sales: 134 },
-                      { name: "Pierre Bernard", revenue: "5,890€", sales: 98 },
-                      { name: "Sophie Dubois", revenue: "4,670€", sales: 87 },
-                      { name: "Luc Thomas", revenue: "3,890€", sales: 76 },
-                    ].map((affiliate, index) => (
+                    {topAffiliates.map((affiliate, index) => (
                       <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
                         <div>
                           <p className="font-medium">{affiliate.name}</p>
-                          <p className="text-sm text-muted-foreground">{affiliate.sales} ventes</p>
+                          <p className="text-sm text-muted-foreground">{affiliate.email}</p>
                         </div>
                         <p className="font-bold text-green-600">{affiliate.revenue}</p>
                       </div>

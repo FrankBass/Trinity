@@ -3,80 +3,77 @@
 import type React from "react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { useUserStore } from "@/lib/store/user-store"
 import { useToast } from "@/hooks/use-toast"
-import { Loader2, LogIn } from "lucide-react"
-import { authenticateUser } from "@/lib/auth/mock-users"
+import { Loader2, LogIn, ArrowLeft } from "lucide-react"
+import Link from "next/link"
+import { supabase } from "@/lib/supabase/client"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
-  const setUser = useUserStore((state) => state.setUser)
   const { toast } = useToast()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
 
-    await new Promise((resolve) => setTimeout(resolve, 500))
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
 
-    const user = authenticateUser(email, password)
-
-    if (!user) {
+    if (error) {
+      console.log("[v0] Login error:", error.message)
       toast({
         title: "Erreur de connexion",
-        description: "Email ou mot de passe incorrect",
+        description: error.message || "Email ou mot de passe incorrect",
         variant: "destructive",
       })
       setIsLoading(false)
       return
     }
 
-    setUser(user)
+    console.log("[v0] Login successful:", data.user?.email)
     toast({
       title: "Connexion réussie",
-      description: `Bienvenue, ${user.name}!`,
+      description: `Bienvenue, ${data.user?.email}!`,
     })
 
-    const roleRoutes: Record<string, string> = {
-      affiliate: "/affiliate",
-      client: "/client",
-      am: "/am",
-      manager: "/manager",
-      pole_manager: "/pole-manager",
-      admin: "/entity-admin",
-      owner: "/owner",
-    }
-
-    const redirectPath = roleRoutes[user.role] || "/affiliate"
-    router.push(redirectPath)
+    // Redirect to manager dashboard by default
+    router.push("/manager")
     setIsLoading(false)
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md"
-      >
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-secondary/20 p-4">
+      <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-foreground mb-2">Trinity</h1>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Retour à l'accueil
+          </Link>
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
+              <span className="text-primary-foreground font-bold text-xl">T</span>
+            </div>
+            <h1 className="text-4xl font-bold text-foreground">Trinity</h1>
+          </div>
           <p className="text-muted-foreground">Plateforme de gestion d'affiliation</p>
         </div>
 
-        <Card>
+        <Card className="shadow-lg">
           <CardHeader>
             <CardTitle>Connexion</CardTitle>
-            <CardDescription>Connectez-vous à votre compte Trinity</CardDescription>
+            <CardDescription>Connectez-vous à votre compte Trinity avec Supabase</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
@@ -121,22 +118,27 @@ export default function LoginPage() {
               </Button>
             </form>
 
-            <div className="mt-6 p-4 bg-muted rounded-lg">
-              <p className="text-sm font-medium mb-2">Comptes de test :</p>
-              <div className="space-y-1 text-xs text-muted-foreground">
-                <p>• affiliate@trinity.com (Affilié)</p>
-                <p>• client@trinity.com (Client)</p>
-                <p>• am@trinity.com (Account Manager)</p>
-                <p>• manager@trinity.com (Manager)</p>
-                <p>• pole@trinity.com (Manager de Pôle)</p>
-                <p>• admin@trinity.com (Admin d'Entité)</p>
-                <p>• owner@trinity.com (Trinity Owner)</p>
-                <p className="mt-2 font-medium">Mot de passe : password</p>
+            <div className="mt-6 text-center text-sm">
+              <span className="text-muted-foreground">Pas encore de compte ? </span>
+              <Link href="/signup" className="text-primary hover:underline font-medium">
+                S'inscrire
+              </Link>
+            </div>
+
+            <div className="mt-6 p-4 bg-secondary/50 rounded-lg border">
+              <p className="text-sm font-medium mb-3 text-center">Pour tester :</p>
+              <div className="text-xs space-y-2">
+                <p>1. Créez un compte dans Supabase Auth (SQL Editor) :</p>
+                <code className="block p-2 bg-background rounded text-[10px]">
+                  INSERT INTO auth.users (email, encrypted_password) VALUES ('test@trinity.com', crypt('password',
+                  gen_salt('bf')));
+                </code>
+                <p className="text-center mt-2">ou utilisez la page d'inscription</p>
               </div>
             </div>
           </CardContent>
         </Card>
-      </motion.div>
+      </div>
     </div>
   )
 }
