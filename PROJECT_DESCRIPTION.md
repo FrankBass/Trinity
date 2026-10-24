@@ -92,6 +92,58 @@ affiliate < client < am < manager < pole_manager < entity_admin < owner
 
 La fonction `hasPermission` compare les niveaux numériques. C'est pratique pour un modèle hiérarchique simple, mais cela signifie qu'un rôle supérieur est considéré comme ayant les permissions d'un rôle inférieur. Pour une application multi-entités, cette vérification doit toujours être complétée par un contrôle de périmètre : entité, pôle, manager, client ou portefeuille concerné.
 
+### Ce que chaque rôle doit afficher et masquer
+
+Le rôle ne sert pas seulement à choisir une route. Il détermine aussi le contenu visible, les actions disponibles, les données retournées et les boutons affichés. Un élément masqué dans la sidebar doit également être refusé côté serveur et par RLS.
+
+| Rôle | Doit afficher | Doit pouvoir faire | Ne doit pas afficher / faire |
+|---|---|---|---|
+| **Affilié** (`affiliate`) | Ses enseignes, opérations, campagnes accessibles, historique, commissions le concernant, notifications, profil et paramètres | Consulter les opportunités, consulter son historique, répondre ou participer aux plans qui le concernent, gérer ses informations | Les autres affiliés, les portefeuilles internes, les données financières globales, la configuration Trinity, les utilisateurs et les règles internes |
+| **Client** (`client`) | Ses campagnes, ses affiliés liés, ses rapports, ses plans et messages liés à son activité, profil et paramètres | Gérer ses campagnes, consulter ses affiliés, suivre les performances et rapports, échanger sur les plans autorisés | Les campagnes d'autres clients, les données internes des AM/managers, les commissions globales, la configuration et les données d'autres entités |
+| **Account Manager** (`am`) | Son portefeuille de clients et affiliés, plans associés, objectifs, performance, commissions et rapports de son périmètre | Créer et suivre des plans, gérer son portefeuille, préparer des propositions, consulter les performances, échanger avec les parties concernées | Les portefeuilles d'autres AM, les paramètres d'administration, les données globales du manager/pôle, les utilisateurs hors périmètre |
+| **Manager** (`manager`) | Les AM, clients, affiliés, campagnes, plans et performances de son périmètre, ainsi que documents, contrats, support et activité | Superviser son équipe, créer/modifier les objets métier autorisés, valider les plans, gérer les documents, suivre commissions et tickets | Les données d'autres entités ou pôles sans rattachement explicite, les réglages Owner, les secrets et clés techniques |
+| **Manager de Pôle** (`pole_manager`) | Les managers et indicateurs de son pôle, la performance consolidée et les rapports de son périmètre | Superviser le pôle, analyser les résultats, consulter les données descendantes autorisées et coordonner les managers | Les autres pôles, les secrets système, les actions Owner et les données non rattachées à son pôle |
+| **Admin d'Entité** (`entity_admin`) | Utilisateurs, managers, pôles, configuration et rapports de son entité | Administrer les comptes et rattachements de son entité, gérer la configuration autorisée, auditer les performances et accès | Les autres entités, les secrets d'infrastructure et les actions réservées au Trinity Owner |
+| **Trinity Owner** (`owner`) | La vision consolidée de toutes les entités, utilisateurs, sécurité, configuration et indicateurs globaux | Administrer le système, superviser toutes les entités, gérer les droits et consulter les données consolidées | Rien au niveau fonctionnel global, mais les opérations sensibles doivent rester protégées, auditées et confirmées |
+
+#### Règle d'implémentation pour chaque élément d'interface
+
+Pour chaque page, bouton, colonne, filtre, menu, action ou donnée, appliquer cette séquence :
+
+1. **Définir le rôle autorisé** et le scope exact : entité, pôle, manager, client, affilié ou plan.
+2. **Ne pas envoyer la donnée interdite au navigateur**, même si la colonne est ensuite masquée en React.
+3. **Masquer l'élément dans l'interface** si le rôle ne peut pas l'utiliser : menu, bouton, action de ligne, onglet, colonne et statistiques.
+4. **Refuser l'action côté serveur** si un utilisateur fabrique une requête ou appelle directement une server action/API.
+5. **Appliquer la même règle dans Supabase RLS** et dans les queries/actions avec un filtrage par utilisateur et périmètre.
+6. **Tester les deux cas** : élément visible et utilisable pour le rôle autorisé, absent et refusé pour les autres rôles.
+
+Exemple : masquer le bouton « Valider le plan » pour un affilié ne suffit pas. L'action de validation doit aussi vérifier la session, le rôle, le rattachement au plan et la policy RLS.
+
+### Comptes de démonstration et vérification des rôles
+
+Les comptes fonctionnels prévus pour tester l'affichage et les permissions sont :
+
+- `affiliate@trinity.com` — Affilié
+- `client@trinity.com` — Client
+- `am@trinity.com` — Account Manager
+- `manager@trinity.com` — Manager
+- `pole@trinity.com` — Manager de Pôle
+- `admin@trinity.com` — Admin d'Entité
+- `owner@trinity.com` — Trinity Owner
+
+Le mot de passe ne doit pas être documenté dans ce fichier. Les comptes doivent être utilisés pour vérifier, rôle par rôle, la sidebar, les pages, les colonnes, les boutons, les actions, les données retournées et les refus d'accès.
+
+### Avertissement « Browser Restriction Detected » dans l'aperçu
+
+L'aperçu intégré de v0 peut afficher **Browser Restriction Detected** lorsqu'il détecte Supabase Auth ou une autre librairie d'authentification. Ce message concerne l'iframe de prévisualisation et les restrictions de cookies/session du navigateur intégré ; il ne signifie pas que les routes ou les fonctions métier sont absentes.
+
+Pour tester l'authentification réelle :
+
+1. ouvrir l'aperçu dans un nouvel onglet ;
+2. se connecter avec l'un des comptes de test ci-dessus ;
+3. vérifier séparément chaque rôle ;
+4. tester aussi une URL interdite directement, car masquer un lien ne remplace pas un contrôle serveur.
+
 ### Portail affilié
 
 Routes principales :
