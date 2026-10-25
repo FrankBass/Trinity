@@ -61,8 +61,6 @@
     "immer": "latest",
     "input-otp": "1.4.1",
     "next-themes": "latest",
-    "pg": "latest",
-    "pg-native": "latest",
     "react-day-picker": "9.8.0",
     "react-hook-form": "^7.60.0",
     "react-resizable-panels": "^2.1.7",
@@ -89,8 +87,5 @@
   "resolutions": {
     "react": "19.1.0",
     "react-dom": "19.1.0"
-  },
-  "trustedDependencies": [
-    "pg-native"
-  ]
+  }
 }
