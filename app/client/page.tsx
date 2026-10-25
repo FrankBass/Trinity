@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -7,12 +8,45 @@ import { Users, TrendingUp, Target, DollarSign } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { getAffiliates } from "@/lib/supabase/queries/affiliates"
+import { getCampaigns } from "@/lib/supabase/queries/campaigns"
 
 export default function ClientDashboard() {
+  const [affiliates, setAffiliates] = useState<any[]>([])
+  const [campaigns, setCampaigns] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [affiliatesData, campaignsData] = await Promise.all([getAffiliates(), getCampaigns()])
+        console.log("[v0] Client Dashboard - Data loaded from Supabase:", { affiliatesData, campaignsData })
+        setAffiliates(affiliatesData)
+        setCampaigns(campaignsData)
+      } catch (error) {
+        console.error("[v0] Error loading dashboard data:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadData()
+  }, [])
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="p-6">Chargement...</div>
+      </DashboardLayout>
+    )
+  }
+
+  const topAffiliates = affiliates.slice(0, 3)
+  const recentCampaigns = campaigns.slice(0, 3)
+
   const stats = [
     {
       title: "Affiliés actifs",
-      value: "47",
+      value: String(affiliates.length),
       change: "+5 ce mois",
       icon: Users,
       trend: "up",
@@ -26,7 +60,7 @@ export default function ClientDashboard() {
     },
     {
       title: "Campagnes actives",
-      value: "8",
+      value: String(campaigns.filter((c) => c.status === "active").length),
       change: "2 en attente",
       icon: Target,
       trend: "neutral",
@@ -37,60 +71,6 @@ export default function ClientDashboard() {
       change: "+22.5%",
       icon: DollarSign,
       trend: "up",
-    },
-  ]
-
-  const topAffiliates = [
-    {
-      id: 1,
-      name: "Jean Dupont",
-      email: "jean@example.com",
-      sales: 156,
-      revenue: "8,450€",
-      avatar: "/placeholder.svg",
-    },
-    {
-      id: 2,
-      name: "Marie Martin",
-      email: "marie@example.com",
-      sales: 134,
-      revenue: "7,230€",
-      avatar: "/placeholder.svg",
-    },
-    {
-      id: 3,
-      name: "Pierre Bernard",
-      email: "pierre@example.com",
-      sales: 98,
-      revenue: "5,890€",
-      avatar: "/placeholder.svg",
-    },
-  ]
-
-  const recentCampaigns = [
-    {
-      id: 1,
-      name: "Promotion Été 2025",
-      status: "active",
-      affiliates: 23,
-      conversions: 456,
-      revenue: "12,340€",
-    },
-    {
-      id: 2,
-      name: "Lancement Nouveau Produit",
-      status: "active",
-      affiliates: 18,
-      conversions: 289,
-      revenue: "8,670€",
-    },
-    {
-      id: 3,
-      name: "Black Friday",
-      status: "scheduled",
-      affiliates: 35,
-      conversions: 0,
-      revenue: "0€",
     },
   ]
 
@@ -134,7 +114,7 @@ export default function ClientDashboard() {
                       #{index + 1}
                     </div>
                     <Avatar className="h-10 w-10">
-                      <AvatarImage src={affiliate.avatar || "/placeholder.svg"} alt={affiliate.name} />
+                      <AvatarImage src="/placeholder.svg" alt={affiliate.name} />
                       <AvatarFallback>
                         {affiliate.name
                           .split(" ")
@@ -144,10 +124,7 @@ export default function ClientDashboard() {
                     </Avatar>
                     <div className="flex-1">
                       <p className="font-medium">{affiliate.name}</p>
-                      <p className="text-sm text-muted-foreground">{affiliate.sales} ventes</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold text-green-600">{affiliate.revenue}</p>
+                      <p className="text-sm text-muted-foreground">{affiliate.email}</p>
                     </div>
                   </div>
                 ))}
@@ -170,16 +147,9 @@ export default function ClientDashboard() {
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <p className="font-medium">{campaign.name}</p>
-                        <Badge variant={campaign.status === "active" ? "default" : "secondary"}>
-                          {campaign.status === "active" ? "Actif" : "Planifié"}
-                        </Badge>
+                        <Badge variant="default">Actif</Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        {campaign.affiliates} affiliés • {campaign.conversions} conversions
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold text-green-600">{campaign.revenue}</p>
+                      <p className="text-sm text-muted-foreground">{campaign.description}</p>
                     </div>
                   </div>
                 ))}

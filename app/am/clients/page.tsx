@@ -1,60 +1,43 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Search, Plus, Mail, Phone, Building2, TrendingUp, ArrowUpRight } from "lucide-react"
+import { Search, Plus, Mail, Phone, Building2, ArrowUpRight } from "lucide-react"
 import Link from "next/link"
+import { getClients } from "@/lib/supabase/queries/clients"
 
 export default function AMClientsPage() {
-  const clients = [
-    {
-      id: 1,
-      name: "TechCorp",
-      contact: "Marie Dubois",
-      email: "marie@techcorp.fr",
-      phone: "+33 1 23 45 67 89",
-      activeCampaigns: 3,
-      totalSpend: "45 000€",
-      status: "active",
-      performance: "+12%",
-    },
-    {
-      id: 2,
-      name: "FashionBrand",
-      contact: "Pierre Martin",
-      email: "pierre@fashionbrand.fr",
-      phone: "+33 1 98 76 54 32",
-      activeCampaigns: 5,
-      totalSpend: "78 500€",
-      status: "active",
-      performance: "+28%",
-    },
-    {
-      id: 3,
-      name: "FoodDelivery",
-      contact: "Sophie Laurent",
-      email: "sophie@fooddelivery.fr",
-      phone: "+33 1 11 22 33 44",
-      activeCampaigns: 2,
-      totalSpend: "32 000€",
-      status: "active",
-      performance: "+5%",
-    },
-    {
-      id: 4,
-      name: "FinanceApp",
-      contact: "Thomas Bernard",
-      email: "thomas@financeapp.fr",
-      phone: "+33 1 55 66 77 88",
-      activeCampaigns: 4,
-      totalSpend: "92 000€",
-      status: "active",
-      performance: "+18%",
-    },
-  ]
+  const [clients, setClients] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const clientsData = await getClients()
+        setClients(clientsData)
+        console.log("[v0] AM Clients - Clients loaded from Supabase:", clientsData)
+      } catch (error) {
+        console.error("[v0] Error loading clients:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadData()
+  }, [])
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <p className="text-muted-foreground">Chargement des données...</p>
+        </div>
+      </DashboardLayout>
+    )
+  }
 
   return (
     <DashboardLayout>
@@ -98,10 +81,10 @@ export default function AMClientsPage() {
                             <div className="flex items-center gap-2">
                               <h3 className="font-semibold text-lg">{client.name}</h3>
                               <Badge variant="outline" className="bg-green-500/10 text-green-500">
-                                {client.status === "active" ? "Actif" : "Inactif"}
+                                Actif
                               </Badge>
                             </div>
-                            <p className="text-sm text-muted-foreground">{client.contact}</p>
+                            <p className="text-sm text-muted-foreground">{client.contact_name}</p>
                           </div>
                         </div>
 
@@ -118,19 +101,8 @@ export default function AMClientsPage() {
 
                         <div className="flex items-center gap-6 pl-15">
                           <div>
-                            <p className="text-xs text-muted-foreground">Campagnes actives</p>
-                            <p className="text-lg font-semibold">{client.activeCampaigns}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">Dépenses totales</p>
-                            <p className="text-lg font-semibold">{client.totalSpend}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">Performance</p>
-                            <div className="flex items-center gap-1">
-                              <TrendingUp className="h-4 w-4 text-green-500" />
-                              <p className="text-lg font-semibold text-green-500">{client.performance}</p>
-                            </div>
+                            <p className="text-xs text-muted-foreground">Secteur</p>
+                            <p className="text-lg font-semibold">{client.industry}</p>
                           </div>
                         </div>
                       </div>

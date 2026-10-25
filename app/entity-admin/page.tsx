@@ -5,20 +5,75 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Building2, Users, Settings, Shield, FileText, Activity } from "lucide-react"
+import { useState, useEffect } from "react"
+import { getAllAccountManagers } from "@/lib/supabase/queries/ams"
+import { getClients } from "@/lib/supabase/queries/clients"
 
 export default function EntityAdminDashboard() {
-  const stats = [
-    { label: "Pôles actifs", value: "4", icon: Building2, trend: "Stable", color: "text-blue-500" },
-    { label: "Utilisateurs totaux", value: "156", icon: Users, trend: "+12 ce mois", color: "text-purple-500" },
-    { label: "Logs d'audit", value: "2,847", icon: FileText, trend: "Ce mois", color: "text-green-500" },
-    { label: "Système", value: "100%", icon: Activity, trend: "Opérationnel", color: "text-green-500" },
-  ]
+  const [stats, setStats] = useState({
+    activePoles: 0,
+    totalUsers: 0,
+    auditLogs: 0,
+    systemStatus: "100%",
+  })
+  const [recentActivities, setRecentActivities] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
-  const recentActivities = [
-    { id: 1, user: "admin@trinity.fr", action: "Création d'un nouveau pôle", time: "Il y a 2h", type: "create" },
-    { id: 2, user: "manager@trinity.fr", action: "Modification des permissions", time: "Il y a 5h", type: "update" },
-    { id: 3, user: "admin@trinity.fr", action: "Export des données", time: "Il y a 1j", type: "export" },
-    { id: 4, user: "system", action: "Sauvegarde automatique", time: "Il y a 1j", type: "system" },
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [ams, clients] = await Promise.all([getAllAccountManagers(), getClients()])
+
+        console.log("[v0] Entity Admin Dashboard - AMs from Supabase:", ams?.length)
+        console.log("[v0] Entity Admin Dashboard - Clients from Supabase:", clients?.length)
+
+        setStats({
+          activePoles: 1, // Will be dynamic when poles table is fully implemented
+          totalUsers: (ams?.length || 0) + (clients?.length || 0),
+          auditLogs: 0, // Will be from audit_logs table when implemented
+          systemStatus: "100%",
+        })
+
+        // For now using empty activities until audit_logs table is queried
+        setRecentActivities([])
+      } catch (error) {
+        console.error("[v0] Error loading entity admin data:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    loadData()
+  }, [])
+
+  const statsDisplay = [
+    {
+      label: "Pôles actifs",
+      value: stats.activePoles.toString(),
+      icon: Building2,
+      trend: "Stable",
+      color: "text-blue-500",
+    },
+    {
+      label: "Utilisateurs totaux",
+      value: stats.totalUsers.toString(),
+      icon: Users,
+      trend: `${stats.totalUsers} utilisateurs`,
+      color: "text-purple-500",
+    },
+    {
+      label: "Logs d'audit",
+      value: stats.auditLogs.toString(),
+      icon: FileText,
+      trend: "Ce mois",
+      color: "text-green-500",
+    },
+    {
+      label: "Système",
+      value: stats.systemStatus,
+      icon: Activity,
+      trend: "Opérationnel",
+      color: "text-green-500",
+    },
   ]
 
   const getActivityBadge = (type: string) => {
@@ -34,6 +89,16 @@ export default function EntityAdminDashboard() {
     }
   }
 
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <p>Chargement...</p>
+        </div>
+      </DashboardLayout>
+    )
+  }
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -43,7 +108,7 @@ export default function EntityAdminDashboard() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {stats.map((stat) => (
+          {statsDisplay.map((stat) => (
             <Card key={stat.label}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">{stat.label}</CardTitle>
@@ -64,23 +129,27 @@ export default function EntityAdminDashboard() {
               <CardDescription>Activités système et utilisateurs</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {recentActivities.map((activity) => (
-                  <div
-                    key={activity.id}
-                    className="flex items-start justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-                  >
-                    <div className="space-y-1 flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium text-sm">{activity.action}</p>
-                        {getActivityBadge(activity.type)}
+              {recentActivities.length === 0 ? (
+                <p className="text-center py-8 text-muted-foreground text-sm">Aucune activité récente</p>
+              ) : (
+                <div className="space-y-3">
+                  {recentActivities.map((activity) => (
+                    <div
+                      key={activity.id}
+                      className="flex items-start justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                    >
+                      <div className="space-y-1 flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-sm">{activity.action}</p>
+                          {getActivityBadge(activity.type)}
+                        </div>
+                        <p className="text-xs text-muted-foreground">{activity.user}</p>
+                        <p className="text-xs text-muted-foreground">{activity.time}</p>
                       </div>
-                      <p className="text-xs text-muted-foreground">{activity.user}</p>
-                      <p className="text-xs text-muted-foreground">{activity.time}</p>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
               <Button variant="outline" className="w-full mt-4 bg-transparent">
                 Voir tous les logs
               </Button>

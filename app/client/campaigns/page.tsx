@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -14,58 +15,34 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { getCampaigns } from "@/lib/supabase/queries/campaigns"
 
 export default function ClientCampaigns() {
-  const campaigns = [
-    {
-      id: 1,
-      name: "Promotion Été 2025",
-      status: "active",
-      commission: "15%",
-      affiliates: 23,
-      clicks: 5678,
-      conversions: 456,
-      revenue: "12,340€",
-      startDate: "01 Juin 2025",
-      endDate: "31 Août 2025",
-    },
-    {
-      id: 2,
-      name: "Lancement Nouveau Produit",
-      status: "active",
-      commission: "20%",
-      affiliates: 18,
-      clicks: 3456,
-      conversions: 289,
-      revenue: "8,670€",
-      startDate: "15 Mai 2025",
-      endDate: "15 Juil 2025",
-    },
-    {
-      id: 3,
-      name: "Black Friday",
-      status: "scheduled",
-      commission: "25%",
-      affiliates: 35,
-      clicks: 0,
-      conversions: 0,
-      revenue: "0€",
-      startDate: "25 Nov 2025",
-      endDate: "30 Nov 2025",
-    },
-    {
-      id: 4,
-      name: "Soldes d'Hiver",
-      status: "paused",
-      commission: "12%",
-      affiliates: 15,
-      clicks: 2345,
-      conversions: 178,
-      revenue: "4,560€",
-      startDate: "10 Jan 2025",
-      endDate: "28 Fév 2025",
-    },
-  ]
+  const [campaigns, setCampaigns] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function loadCampaigns() {
+      try {
+        const data = await getCampaigns()
+        console.log("[v0] Client Campaigns loaded from Supabase:", data)
+        setCampaigns(data)
+      } catch (error) {
+        console.error("[v0] Error loading campaigns:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadCampaigns()
+  }, [])
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="p-6">Chargement...</div>
+      </DashboardLayout>
+    )
+  }
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, "default" | "secondary" | "outline"> = {
@@ -77,6 +54,7 @@ export default function ClientCampaigns() {
       active: "Actif",
       scheduled: "Planifié",
       paused: "En pause",
+      completed: "Terminé",
     }
     return <Badge variant={variants[status] || "outline"}>{labels[status] || status}</Badge>
   }
@@ -120,11 +98,12 @@ export default function ClientCampaigns() {
                     <div className="flex items-start justify-between">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                          <CardTitle>{campaign.name}</CardTitle>
+                          <CardTitle>{campaign.campaign_name}</CardTitle>
                           {getStatusBadge(campaign.status)}
                         </div>
                         <CardDescription>
-                          {campaign.startDate} - {campaign.endDate}
+                          {new Date(campaign.start_date).toLocaleDateString("fr-FR")} -{" "}
+                          {new Date(campaign.end_date).toLocaleDateString("fr-FR")}
                         </CardDescription>
                       </div>
                       <DropdownMenu>
@@ -149,26 +128,28 @@ export default function ClientCampaigns() {
                         <Users className="h-4 w-4 text-muted-foreground" />
                         <div>
                           <p className="text-sm text-muted-foreground">Affiliés</p>
-                          <p className="text-lg font-bold">{campaign.affiliates}</p>
+                          <p className="text-lg font-bold">0</p>
                         </div>
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Clics</p>
-                        <p className="text-lg font-bold">{campaign.clicks.toLocaleString()}</p>
+                        <p className="text-lg font-bold">0</p>
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Conversions</p>
-                        <p className="text-lg font-bold">{campaign.conversions}</p>
+                        <p className="text-lg font-bold">0</p>
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Commission</p>
-                        <p className="text-lg font-bold">{campaign.commission}</p>
+                        <p className="text-sm text-muted-foreground">Budget</p>
+                        <p className="text-lg font-bold">
+                          {campaign.estimated_budget ? `${campaign.estimated_budget}€` : "N/A"}
+                        </p>
                       </div>
                       <div className="flex items-center gap-2">
                         <TrendingUp className="h-4 w-4 text-green-600" />
                         <div>
                           <p className="text-sm text-muted-foreground">CA généré</p>
-                          <p className="text-lg font-bold text-green-600">{campaign.revenue}</p>
+                          <p className="text-lg font-bold text-green-600">0€</p>
                         </div>
                       </div>
                     </div>
@@ -197,7 +178,7 @@ export default function ClientCampaigns() {
                 .map((campaign) => (
                   <Card key={campaign.id}>
                     <CardHeader>
-                      <CardTitle>{campaign.name}</CardTitle>
+                      <CardTitle>{campaign.campaign_name}</CardTitle>
                       <CardDescription>
                         {campaign.affiliates} affiliés • {campaign.conversions} conversions
                       </CardDescription>
@@ -217,8 +198,10 @@ export default function ClientCampaigns() {
                 .map((campaign) => (
                   <Card key={campaign.id}>
                     <CardHeader>
-                      <CardTitle>{campaign.name}</CardTitle>
-                      <CardDescription>Démarre le {campaign.startDate}</CardDescription>
+                      <CardTitle>{campaign.campaign_name}</CardTitle>
+                      <CardDescription>
+                        Démarre le {new Date(campaign.start_date).toLocaleDateString("fr-FR")}
+                      </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <p className="text-sm text-muted-foreground">{campaign.affiliates} affiliés inscrits</p>
@@ -235,7 +218,7 @@ export default function ClientCampaigns() {
                 .map((campaign) => (
                   <Card key={campaign.id}>
                     <CardHeader>
-                      <CardTitle>{campaign.name}</CardTitle>
+                      <CardTitle>{campaign.campaign_name}</CardTitle>
                       <CardDescription>En pause depuis le 28 Fév 2025</CardDescription>
                     </CardHeader>
                     <CardContent>

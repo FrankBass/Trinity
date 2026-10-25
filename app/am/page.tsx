@@ -1,16 +1,44 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Users, FileText, TrendingUp, Clock, ArrowUpRight, CheckCircle2, AlertCircle, XCircle } from "lucide-react"
 import Link from "next/link"
+import { getPlans } from "@/lib/supabase/queries/plans"
 
 export default function AMDashboard() {
+  const [plansData, setPlansData] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const plans = await getPlans()
+        setPlansData(plans)
+        console.log("[v0] AM Dashboard - Plans loaded from Supabase:", plans)
+      } catch (error) {
+        console.error("[v0] Error loading AM dashboard data:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadData()
+  }, [])
+
+  const recentPlans = plansData.slice(0, 4)
+
   const stats = [
     { label: "Clients actifs", value: "12", icon: Users, trend: "+2 ce mois", color: "text-blue-500" },
-    { label: "Plans en cours", value: "8", icon: FileText, trend: "3 en attente", color: "text-purple-500" },
+    {
+      label: "Plans en cours",
+      value: String(plansData.length),
+      icon: FileText,
+      trend: `${plansData.filter((p) => p.status === "pending").length} en attente`,
+      color: "text-purple-500",
+    },
     {
       label: "Taux de conversion",
       value: "68%",
@@ -24,34 +52,6 @@ export default function AMDashboard() {
       icon: Clock,
       trend: "-0.5j vs mois dernier",
       color: "text-orange-500",
-    },
-  ]
-
-  const recentPlans = [
-    { id: 1, client: "TechCorp", campaign: "Lancement Q1", status: "pending", date: "2025-01-15", amount: "15 000€" },
-    {
-      id: 2,
-      client: "FashionBrand",
-      campaign: "Collection Été",
-      status: "approved",
-      date: "2025-01-14",
-      amount: "22 500€",
-    },
-    {
-      id: 3,
-      client: "FoodDelivery",
-      campaign: "Expansion Régionale",
-      status: "rejected",
-      date: "2025-01-13",
-      amount: "8 000€",
-    },
-    {
-      id: 4,
-      client: "FinanceApp",
-      campaign: "Acquisition Utilisateurs",
-      status: "pending",
-      date: "2025-01-12",
-      amount: "30 000€",
     },
   ]
 
@@ -79,6 +79,16 @@ export default function AMDashboard() {
           </Badge>
         )
     }
+  }
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <p className="text-muted-foreground">Chargement des données...</p>
+        </div>
+      </DashboardLayout>
+    )
   }
 
   return (
@@ -119,14 +129,14 @@ export default function AMDashboard() {
                   >
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <p className="font-medium">{plan.client}</p>
+                        <p className="font-medium">{plan.client?.name || "Client"}</p>
                         {getStatusBadge(plan.status)}
                       </div>
-                      <p className="text-sm text-muted-foreground">{plan.campaign}</p>
-                      <p className="text-xs text-muted-foreground">{plan.date}</p>
+                      <p className="text-sm text-muted-foreground">{plan.campaign_name}</p>
+                      <p className="text-xs text-muted-foreground">{plan.created_at}</p>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold">{plan.amount}</p>
+                      <p className="font-semibold">{plan.fixed_fee}€</p>
                       <Button variant="ghost" size="sm" asChild>
                         <Link href={`/am/plans/${plan.id}`}>
                           Voir <ArrowUpRight className="w-3 h-3 ml-1" />
