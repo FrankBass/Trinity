@@ -320,6 +320,54 @@ La base impose notamment que la date de fin soit supérieure ou égale à la dat
 
 Les champs `updated_at`, `last_updated` et `validated_at` ne sont pas interchangeables : certains écrans s'appuient sur les dates techniques, d'autres sur les dates métier. Lors d'une modification, il faut conserver cette distinction.
 
+### Contenu concret des tables et sorties par rôle
+
+La distinction entre les profils ne se limite pas aux routes. Une même table peut alimenter plusieurs écrans, mais chaque rôle reçoit uniquement les lignes, colonnes, indicateurs et actions correspondant à son périmètre.
+
+| Table / objet | Contenu métier attendu | Affiché principalement dans | Règle de filtrage |
+|---|---|---|---|
+| `profiles` / utilisateurs | nom, email, avatar, rôle, statut, rattachements | profil, administration utilisateurs, sélecteurs | soi-même, équipe, entité ou vision globale selon le rôle |
+| `account_managers` | AM, manager responsable, pôle, portefeuille et statut | dashboards AM/Manager/Pôle/Admin | AM lui-même, équipe du manager, pôle ou entité |
+| `am_delegations` | délégation, bénéficiaire, dates, périmètre et statut | Manager et AM | uniquement les délégations du périmètre autorisé |
+| `am_objectives` | objectifs commerciaux, période, cible, progression et statut | AM, Manager, Pôle | AM concerné ou agrégation hiérarchique |
+| `affiliates` | identité partenaire, enseignes, statut, performances et contacts | Affilié, Client, AM, Manager | affilié lui-même, affiliés liés ou portefeuille |
+| `clients` | annonceur, contacts, campagnes, budget, statut et rattachement AM | Client, AM, Manager | client lui-même, portefeuille AM ou équipe manager |
+| `plans` | client, affilié, campagne, dates, rémunération, statut, budget et contre-propositions | Client, Affilié, AM, Manager | parties du plan et responsables du périmètre |
+| historique / commentaires | transitions, auteur, date, message, ancienne et nouvelle valeur | détail d'un plan, activité, audit | uniquement les personnes autorisées sur l'objet |
+| `commissions` | plan, AM, montant, pourcentage, statut et date de paiement | AM, Manager, rapports | données personnelles pour l'AM, agrégées pour les niveaux supérieurs |
+| `reports` | titre, période, type, auteur, statut et données calculées | Client, AM, Manager, Pôle, Admin, Owner | rapport publié et périmètre rattaché |
+| `documents` | fichier, catégorie, taille, auteur, client/plan associé et tags | plans, clients, contrats, manager | accès hérité du client, plan ou rôle administratif |
+| `contracts` | numéro, parties, type, statut, dates, valeur et signature | Manager, Client, Admin | client/plan concerné ou administration autorisée |
+| `media_kits` | ressources affilié, fichier, miniature, téléchargements et statut | Manager et Affilié | kits publiés pour l'affilié concerné |
+| `email_templates` | nom, sujet, corps, catégorie, variables et activation | Manager | équipe manager ou entité selon la configuration |
+| notifications | destinataire, type, message, lien, lu/non lu et date | tous les portails | uniquement le destinataire |
+| activité / audit | acteur, action, objet, ancien/nouveau contenu et date | Manager, Admin, Owner | périmètre hiérarchique et niveau d'audit |
+| support tickets | demandeur, sujet, priorité, statut, messages et historique | Manager et demandeur autorisé | demandeur, équipe support ou périmètre manager |
+
+#### Vue attendue par portail
+
+- **Affilié** : vue personnelle et partenaire. Il voit ses enseignes, opérations, plans qui le concernent, historique, notifications, commissions le concernant et profil. Les budgets globaux, autres affiliés, règles internes et données d'équipe sont absents.
+- **Client** : vue annonceur. Il voit ses campagnes, ses affiliés liés, les plans et messages de son activité ainsi que ses rapports. Il ne voit ni les portefeuilles internes, ni les données d'autres clients, ni les commissions globales.
+- **Account Manager** : vue portefeuille. Le dashboard agrège uniquement ses clients, affiliés, plans, objectifs, commissions et performances. Les listes et graphiques doivent exclure les portefeuilles des autres AM.
+- **Manager** : vue équipe. Il voit les AM rattachés, leurs clients et affiliés, les campagnes, plans, commissions, objectifs, documents, contrats, activité et support de son périmètre. Les chiffres sont consolidés à l'échelle de son équipe.
+- **Manager de Pôle** : vue consolidation de pôle. Il voit les managers et AM descendants, les KPI agrégés, la performance, les rapports et alertes du pôle. Il ne voit pas les autres pôles ni les actions Owner.
+- **Admin d'Entité** : vue administration d'entité. Il voit les utilisateurs, pôles, managers, rattachements, configuration autorisée, rapports et audits de l'entité. Il ne voit pas les autres entités ni les secrets techniques.
+- **Trinity Owner** : vue globale. Il voit toutes les entités, utilisateurs, performances consolidées, sécurité, configuration système et rapports globaux. Toute action sensible doit être confirmée et auditée.
+
+#### Matrice visibilité / action
+
+| Fonction | Affilié | Client | AM | Manager | Pôle | Admin Entité | Owner |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Consulter ses propres données | Oui | Oui | Oui | Oui | Oui | Oui | Oui |
+| Voir les données de son périmètre | Non | Limité à ses campagnes | Portefeuille | Équipe | Pôle | Entité | Global |
+| Créer un plan | Participer/répondre | Selon campagne | Oui | Oui | Superviser | Selon configuration | Oui |
+| Valider un plan | Non | Selon workflow | Préparer | Oui | Superviser | Non métier | Oui/audité |
+| Gérer utilisateurs et rattachements | Non | Non | Non | Équipe limitée | Managers du pôle | Entité | Global |
+| Voir commissions consolidées | Non | Non | Ses commissions | Équipe | Pôle | Rapport autorisé | Global |
+| Administrer configuration | Profil uniquement | Profil uniquement | Profil uniquement | Paramètres métier | Pôle | Entité | Système |
+
+Une sortie de query doit donc être pensée comme une **vue métier filtrée**, et non comme une table brute. Par exemple, le dashboard AM retourne des agrégats de son portefeuille, tandis que le dashboard Manager retourne les mêmes familles de KPI regroupées par AM, client ou campagne. Le composant React ne doit jamais recevoir les lignes interdites pour ensuite les cacher.
+
 ---
 
 ## 7. Architecture des accès aux données
